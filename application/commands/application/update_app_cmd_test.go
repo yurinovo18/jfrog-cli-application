@@ -15,21 +15,30 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestCreateAppCommand_Run(t *testing.T) {
+func TestUpdateAppCommand_Run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	serverDetails := &config.ServerDetails{Url: "https://example.com"}
+	appKey := "app-key"
 	requestPayload := &model.AppDescriptor{
-		ApplicationKey:  "app-key",
-		ApplicationName: "app-name",
-		ProjectKey:      "proj-key",
+		ApplicationKey:      appKey,
+		ApplicationName:     "app-name",
+		Description:         "Updated description",
+		MaturityLevel:       "production",
+		BusinessCriticality: "high",
+		Labels: map[string]string{
+			"environment": "production",
+			"region":      "us-east",
+		},
+		UserOwners:  []string{"JohnD", "Dave Rice"},
+		GroupOwners: []string{"DevOps"},
 	}
 
 	mockAppService := mockapps.NewMockApplicationService(ctrl)
-	mockAppService.EXPECT().CreateApplication(gomock.Any(), requestPayload).Return(nil).Times(1)
+	mockAppService.EXPECT().UpdateApplication(gomock.Any(), requestPayload).Return(nil).Times(1)
 
-	cmd := &createAppCommand{
+	cmd := &updateAppCommand{
 		applicationService: mockAppService,
 		serverDetails:      serverDetails,
 		requestBody:        requestPayload,
@@ -39,21 +48,30 @@ func TestCreateAppCommand_Run(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestCreateAppCommand_Error(t *testing.T) {
+func TestUpdateAppCommand_Run_Error(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	serverDetails := &config.ServerDetails{Url: "https://example.com"}
+	appKey := "app-key"
 	requestPayload := &model.AppDescriptor{
-		ApplicationKey:  "app-key",
-		ApplicationName: "app-name",
-		ProjectKey:      "proj-key",
+		ApplicationKey:      appKey,
+		ApplicationName:     "app-name",
+		Description:         "Updated description",
+		MaturityLevel:       "production",
+		BusinessCriticality: "high",
+		Labels: map[string]string{
+			"environment": "production",
+			"region":      "us-east",
+		},
+		UserOwners:  []string{"JohnD", "Dave Rice"},
+		GroupOwners: []string{"DevOps"},
 	}
 
 	mockAppService := mockapps.NewMockApplicationService(ctrl)
-	mockAppService.EXPECT().CreateApplication(gomock.Any(), requestPayload).Return(errors.New("failed to create an application. Status code: 500")).Times(1)
+	mockAppService.EXPECT().UpdateApplication(gomock.Any(), requestPayload).Return(errors.New("failed to update application. Status code: 500")).Times(1)
 
-	cmd := &createAppCommand{
+	cmd := &updateAppCommand{
 		applicationService: mockAppService,
 		serverDetails:      serverDetails,
 		requestBody:        requestPayload,
@@ -61,10 +79,10 @@ func TestCreateAppCommand_Error(t *testing.T) {
 
 	err := cmd.Run()
 	assert.Error(t, err)
-	assert.Equal(t, "failed to create an application. Status code: 500", err.Error())
+	assert.Equal(t, "failed to update application. Status code: 500", err.Error())
 }
 
-func TestCreateAppCommand_WrongNumberOfArguments(t *testing.T) {
+func TestUpdateAppCommand_WrongNumberOfArguments(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	app := cli.NewApp()
@@ -72,7 +90,7 @@ func TestCreateAppCommand_WrongNumberOfArguments(t *testing.T) {
 	ctx := cli.NewContext(app, set, nil)
 
 	mockAppService := mockapps.NewMockApplicationService(ctrl)
-	cmd := &createAppCommand{
+	cmd := &updateAppCommand{
 		applicationService: mockAppService,
 	}
 
