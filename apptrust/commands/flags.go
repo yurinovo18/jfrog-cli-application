@@ -12,6 +12,7 @@ const (
 	VersionCreate  = "version-create"
 	VersionPromote = "version-promote"
 	VersionDelete  = "version-delete"
+	VersionRelease = "version-release"
 	PackageBind    = "package-bind"
 	PackageUnbind  = "package-unbind"
 	AppCreate      = "app-create"
@@ -47,6 +48,7 @@ const (
 	DryRunFlag              = "dry-run"
 	ExcludeReposFlag        = "exclude-repos"
 	IncludeReposFlag        = "include-repos"
+	PropsFlag               = "props"
 )
 
 // Flag keys mapped to their corresponding components.Flag definition.
@@ -79,6 +81,7 @@ var flagsMap = map[string]components.Flag{
 	DryRunFlag:              components.NewBoolFlag(DryRunFlag, "Perform a simulation of the operation.", components.WithBoolDefaultValueFalse()),
 	ExcludeReposFlag:        components.NewStringFlag(ExcludeReposFlag, "Semicolon-separated list of repositories to exclude.", func(f *components.StringFlag) { f.Mandatory = false }),
 	IncludeReposFlag:        components.NewStringFlag(IncludeReposFlag, "Semicolon-separated list of repositories to include.", func(f *components.StringFlag) { f.Mandatory = false }),
+	PropsFlag:               components.NewStringFlag(PropsFlag, "Semicolon-separated list of properties in the form of 'key1=value1;key2=value2;...' to be added to each artifact.", func(f *components.StringFlag) { f.Mandatory = false }),
 }
 
 var commandFlags = map[string][]string{
@@ -105,6 +108,18 @@ var commandFlags = map[string][]string{
 		DryRunFlag,
 		ExcludeReposFlag,
 		IncludeReposFlag,
+		PropsFlag,
+	},
+	VersionRelease: {
+		url,
+		user,
+		accessToken,
+		serverId,
+		SyncFlag,
+		PromotionTypeFlag,
+		ExcludeReposFlag,
+		IncludeReposFlag,
+		PropsFlag,
 	},
 	VersionDelete: {
 		url,
