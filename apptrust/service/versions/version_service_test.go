@@ -293,3 +293,125 @@ func TestReleaseAppVersion(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateAppVersion(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	service := NewVersionService()
+
+	tests := []struct {
+		name             string
+		request          *model.UpdateAppVersionRequest
+		mockResponse     *http.Response
+		mockResponseBody string
+		mockError        error
+		expectError      bool
+		errorMsg         string
+	}{
+		{
+			name: "success - tag only",
+			request: &model.UpdateAppVersionRequest{
+				Tag: "release/1.2.3",
+			},
+			mockResponse:     &http.Response{StatusCode: http.StatusAccepted},
+			mockResponseBody: "{}",
+			mockError:        nil,
+			expectError:      false,
+			errorMsg:         "",
+		},
+		{
+			name: "success - properties only",
+			request: &model.UpdateAppVersionRequest{
+				Properties: map[string][]string{
+					"status": {"rc", "validated"},
+				},
+			},
+			mockResponse:     &http.Response{StatusCode: http.StatusAccepted},
+			mockResponseBody: "{}",
+			mockError:        nil,
+			expectError:      false,
+			errorMsg:         "",
+		},
+		{
+			name: "success - delete properties only",
+			request: &model.UpdateAppVersionRequest{
+				DeleteProperties: []string{"legacy_param", "toBeDeleted"},
+			},
+			mockResponse:     &http.Response{StatusCode: http.StatusAccepted},
+			mockResponseBody: "{}",
+			mockError:        nil,
+			expectError:      false,
+			errorMsg:         "",
+		},
+		{
+			name: "success - combined update",
+			request: &model.UpdateAppVersionRequest{
+				Tag: "release/1.2.3",
+				Properties: map[string][]string{
+					"status": {"rc", "validated"},
+				},
+				DeleteProperties: []string{"old_param"},
+			},
+			mockResponse:     &http.Response{StatusCode: http.StatusAccepted},
+			mockResponseBody: "{}",
+			mockError:        nil,
+			expectError:      false,
+			errorMsg:         "",
+		},
+		{
+			name: "failure - 400",
+			request: &model.UpdateAppVersionRequest{
+				Tag: "invalid-tag",
+			},
+			mockResponse:     &http.Response{StatusCode: http.StatusBadRequest},
+			mockResponseBody: "bad request",
+			mockError:        nil,
+			expectError:      true,
+			errorMsg:         "failed to update app version",
+		},
+		{
+			name: "failure - 404",
+			request: &model.UpdateAppVersionRequest{
+				Tag: "release/1.2.3",
+			},
+			mockResponse:     &http.Response{StatusCode: http.StatusNotFound},
+			mockResponseBody: "not found",
+			mockError:        nil,
+			expectError:      true,
+			errorMsg:         "failed to update app version",
+		},
+		{
+			name: "http client error",
+			request: &model.UpdateAppVersionRequest{
+				Tag: "release/1.2.3",
+			},
+			mockResponse:     nil,
+			mockResponseBody: "",
+			mockError:        errors.New("http client error"),
+			expectError:      true,
+			errorMsg:         "http client error",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockHttpClient := mockhttp.NewMockApptrustHttpClient(ctrl)
+			mockHttpClient.EXPECT().Patch("/v1/applications/test-app/versions/1.0.0", tt.request).
+				Return(tt.mockResponse, []byte(tt.mockResponseBody), tt.mockError).Times(1)
+
+			mockCtx := mockservice.NewMockContext(ctrl)
+			mockCtx.EXPECT().GetHttpClient().Return(mockHttpClient).AnyTimes()
+
+			err := service.UpdateAppVersion(mockCtx, "test-app", "1.0.0", tt.request)
+			if tt.expectError {
+				assert.Error(t, err)
+				if tt.errorMsg != "" {
+					assert.Contains(t, err.Error(), tt.errorMsg)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
