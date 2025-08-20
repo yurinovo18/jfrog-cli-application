@@ -8,17 +8,18 @@ import (
 )
 
 const (
-	Ping           = "ping"
-	VersionCreate  = "version-create"
-	VersionPromote = "version-promote"
-	VersionDelete  = "version-delete"
-	VersionRelease = "version-release"
-	VersionUpdate  = "version-update"
-	PackageBind    = "package-bind"
-	PackageUnbind  = "package-unbind"
-	AppCreate      = "app-create"
-	AppUpdate      = "app-update"
-	AppDelete      = "app-delete"
+	Ping            = "ping"
+	VersionCreate   = "version-create"
+	VersionPromote  = "version-promote"
+	VersionRollback = "version-rollback"
+	VersionDelete   = "version-delete"
+	VersionRelease  = "version-release"
+	VersionUpdate   = "version-update"
+	PackageBind     = "package-bind"
+	PackageUnbind   = "package-unbind"
+	AppCreate       = "app-create"
+	AppUpdate       = "app-update"
+	AppDelete       = "app-delete"
 )
 
 const (
@@ -124,6 +125,12 @@ var commandFlags = map[string][]string{
 		PropsFlag,
 	},
 	VersionDelete: {
+		url,
+		user,
+		accessToken,
+		serverId,
+	},
+	VersionRollback: {
 		url,
 		user,
 		accessToken,

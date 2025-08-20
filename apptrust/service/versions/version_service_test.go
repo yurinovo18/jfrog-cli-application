@@ -415,3 +415,70 @@ func TestUpdateAppVersion(t *testing.T) {
 		})
 	}
 }
+
+func TestRollbackAppVersion(t *testing.T) {
+	tests := []struct {
+		name           string
+		applicationKey string
+		version        string
+		payload        *model.RollbackAppVersionRequest
+		expectedStatus int
+		expectedError  bool
+	}{
+		{
+			name:           "successful rollback with 200",
+			applicationKey: "video-encoder",
+			version:        "1.5.0",
+			payload: &model.RollbackAppVersionRequest{
+				FromStage: "qa",
+			},
+			expectedStatus: http.StatusOK,
+			expectedError:  false,
+		},
+		{
+			name:           "successful rollback with 204",
+			applicationKey: "video-encoder",
+			version:        "1.5.0",
+			payload: &model.RollbackAppVersionRequest{
+				FromStage: "prod",
+			},
+			expectedStatus: http.StatusAccepted,
+			expectedError:  false,
+		},
+		{
+			name:           "failed rollback - bad request",
+			applicationKey: "invalid-app",
+			version:        "1.0.0",
+			payload: &model.RollbackAppVersionRequest{
+				FromStage: "nonexistent",
+			},
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockCtx := mockservice.NewMockContext(ctrl)
+			mockClient := mockhttp.NewMockApptrustHttpClient(ctrl)
+			mockCtx.EXPECT().GetHttpClient().Return(mockClient)
+
+			expectedEndpoint := "/v1/applications/" + tt.applicationKey + "/versions/" + tt.version + "/rollback"
+			mockClient.EXPECT().Post(expectedEndpoint, tt.payload, map[string]string{}).
+				Return(&http.Response{StatusCode: tt.expectedStatus}, []byte(""), nil)
+
+			service := NewVersionService()
+			err := service.RollbackAppVersion(mockCtx, tt.applicationKey, tt.version, tt.payload)
+
+			if tt.expectedError {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "failed to rollback app version")
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
