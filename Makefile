@@ -45,8 +45,8 @@ GOLANGCI_LINT:
 
 ########## BUILD ##########
 prereq::
-	$(GOCMD) install github.com/jstemmer/go-junit-report/v2@latest
-	GOBIN=${TOOLS_DIR} $(GOCMD) install go.uber.org/mock/mockgen@v0.5.0
+	$(GOCMD) install gotest.tools/gotestsum@latest
+	GOBIN=${TOOLS_DIR} $(GOCMD) install go.uber.org/mock/mockgen@v0.6.0
 	${TOOLS_DIR}/mockgen --version
 
 build:: clean generate-mock
@@ -82,5 +82,8 @@ test: PACKAGES=./...
 test: test-prereq
 	go test ./...
 test-ci: test-prereq
-	go test -v 2>&1 ./... | go-junit-report -set-exit-code -iocopy -out utests-report.xml
-
+	gotestsum --format testname --junitfile=utests-report.xml -- ./...
+e2e-test: test-prereq
+	go test ./e2e/... -tags=e2e
+e2e-test-ci: test-prereq
+	gotestsum --format testname --junitfile=e2e-tests-report.xml -- ./e2e/... -tags=e2e
