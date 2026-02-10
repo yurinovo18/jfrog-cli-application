@@ -106,4 +106,3 @@ func GetCreateAppVersionCommand(appContext app.Context) components.Command {
 		Action: cmd.prepareAndRunCommand,
 	}
 }
-
